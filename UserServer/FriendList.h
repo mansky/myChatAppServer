@@ -16,6 +16,8 @@ public:
     int order;//序号
     QString description;
     QVector<Friend> friends;
+    FriendList(){
+    }
 
 };
 

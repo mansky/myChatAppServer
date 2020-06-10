@@ -17,6 +17,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    LowLevelServer/ChatTcpSocket.cpp \
     UserServer/UserServer.cpp \
     main.cpp \
     LowLevelServer/ChatAppServer.cpp \
@@ -24,7 +25,8 @@ SOURCES += \
     database/MySqlPool.cpp
 
 HEADERS += \
-    LowLevelServer/chatAppServer.h \
+    LowLevelServer/ChatAppServer.h \
+    LowLevelServer/ChatTcpSocket.h \
     MainWindow.h \
     UserServer/FriendList.h \
     UserServer/UserInfo.h \
