@@ -28,6 +28,6 @@ void ChatAppServer::incomingConnection(qintptr socketDescriptor) //多线程必�
     emit newConnection();
 
 }
-void ChatAppServer::sendToOtherQQ(const QByteArray & data,int QQnum){
-    qDebug()<<data<<"|"<<QQnum<<endl;
-}
+//void ChatAppServer::sendToOtherQQ(const QByteArray & data,int QQnum){
+//    qDebug()<<data<<"|"<<QQnum<<endl;
+//}

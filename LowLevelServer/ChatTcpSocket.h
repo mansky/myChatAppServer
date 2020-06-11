@@ -19,14 +19,21 @@ public:
 
     ChatAppServer *masterServer;
 
+signals:
+    void RegisterToServer(ChatTcpSocket *socket,int QQnum);
+    void fromOther( QByteArray data);//发送信号的槽
 public slots:
-    void sentData(const QByteArray & data);//发送信号的槽
+    void sendToOtherQQ(const  QByteArray &  data,int QQnum);//处理跨线程的消息通信
+    void sentData( QByteArray data);//发送信号的槽
     void disConTcp();
-
-protected slots:
+    void startRegisterToServer();
+protected slots: 
     void dataReceived();//接收数据
 private:
     UserInfo *userInfo;
+    UserServer *userServer;
+    int encodeWrite( QByteArray data);
+    QByteArray decodeRead();
 
 };
 

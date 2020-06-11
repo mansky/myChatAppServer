@@ -18,6 +18,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     LowLevelServer/ChatTcpSocket.cpp \
+    LowLevelServer/SocketMap.cpp \
     UserServer/UserServer.cpp \
     main.cpp \
     LowLevelServer/ChatAppServer.cpp \
@@ -27,6 +28,7 @@ SOURCES += \
 HEADERS += \
     LowLevelServer/ChatAppServer.h \
     LowLevelServer/ChatTcpSocket.h \
+    LowLevelServer/SocketMap.h \
     MainWindow.h \
     UserServer/FriendList.h \
     UserServer/UserInfo.h \

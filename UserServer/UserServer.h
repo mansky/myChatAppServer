@@ -5,6 +5,7 @@
 #include <qstring.h>
 #include "FriendList.h"
 #include "UserServer/UserInfo.h"
+#include <QtSql>
 
 class UserServer:public QObject
 {
@@ -14,7 +15,7 @@ public:
     ~UserServer();
     int addUser(QString nickname,QString password);
     int login(int QQnum,QString password);
-    QVector<FriendList> & getFriendLists(int QQnum);
+    QVector<FriendList*> & getFriendLists(int QQnum);
     int updateFriendList(int QQnum,int friendQQnum,int FriendList);
     int addFriend(int QQnum,int friendQQnum);
     int getMessage(int QQnum,QString message);
@@ -23,8 +24,10 @@ public:
     QByteArray handle(QByteArray data);
     UserInfo *userInfo;
 signals:
-     void sendToOtherQQ(const QByteArray & data,int QQnum);
-private:
+    void sendToOtherQQ(const QByteArray & data,int QQnum);
+    void startRegisterToServer();
+private:;
+    QSqlDatabase db;
 
 };
 

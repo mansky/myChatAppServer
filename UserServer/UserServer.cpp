@@ -1,25 +1,43 @@
 #include "UserServer.h"
-#include "database/MySqlPool.h"
 #include <QDebug>
 #include "UserServer/UserInfo.h"
+#include "database/MySqlPool.h"
 
 UserServer::UserServer(QObject *parent){
+    db=(ConnectionPool::openConnection());//很遗憾，QT5.11之后的版本数据库连接只能在本线程使用。
+
+
+
 
 }
-UserServer::~UserServer(){
+UserServer::~UserServer(){   
+    db.close();
+    QString name;
+    {
+        name = db.connectionName();
+    }//超出作用域，隐含对象QSqlDatabase::database()被删除。
+    //QSqlDatabase::removeDatabase("name");//QT的数据库删除是大坑,QSqlDatabasePrivate::removeDatabase: connection '12s021' is still in use, all queries will cease to work.
+    //    {
+    //        QSqlDatabase dba = QSqlDatabase::addDatabase("QMYSQL", "12s021");
+    //        dba.setHostName("localhost");
+    //        dba.setDatabaseName("myqq");
+    //        dba.setUserName("root");
+    //        dba.setPassword("123456");
+    //        dba.close();
+    //    }
+    //    QSqlDatabase::removeDatabase("12s021");//官方推荐的删除方式，通过作用域自动删除QSqlDatabase对象。
 
 }
 
 int UserServer::addUser(QString nickname,QString password){
     int QQnum=0;
-   // QString sqlWords="INSERT INTO `myqq`.`users` (`nickname`, `password`, `salt`) VALUES ('"+nickname+"','"+password+"', '0');";
-    QSqlDatabase db=ConnectionPool::openConnection();
+    db.setPassword(password);
     QSqlQuery query(db);
     query.prepare("INSERT INTO `myqq`.`users` (`nickname`, `password`, `salt`) VALUES (?,?, '0');");
     query.bindValue(0,nickname);
     query.bindValue(1,password);
     query.exec();
-   // query.exec(sqlWords);//插入新的账户
+
     QString sqlWords="SELECT  LAST_INSERT_ID();";
     query.exec(sqlWords);//查询插入的ID，LAST_INSERT_ID()与connect相关。
     query.seek(0);
@@ -29,7 +47,6 @@ int UserServer::addUser(QString nickname,QString password){
 }
 int UserServer::login(int QQnum,QString password){
     int result=1;
-    QSqlDatabase db=ConnectionPool::openConnection();
     QSqlQuery query(db);
     query.prepare("SELECT  * FROM users WHERE uid = ?");
     query.bindValue(0,QQnum);
@@ -46,40 +63,41 @@ int UserServer::login(int QQnum,QString password){
 
 }
 
- QVector<FriendList>  & UserServer::getFriendLists(int QQnum){
-    QVector<FriendList> *friendLists=new QVector<FriendList>();
-    QSqlDatabase db=ConnectionPool::openConnection();
+ QVector<FriendList *>  & UserServer::getFriendLists(int QQnum){
+    QVector<FriendList*> *friendLists=new QVector<FriendList*>();
+
     QSqlQuery query(db);
-    //QHash<int,FriendList *> friendToList;
+    QHash<int,int> friendToList;
 
     //获取好友列表
     query.prepare("SELECT  * FROM friendlist WHERE uid = ?");
     query.bindValue(0,QQnum);
     query.exec();
     while(query.next()){
-        FriendList friendList ;
-        friendList.uid=QQnum;
-        friendList.order=query.value(1).toInt();
-        friendList.description=query.value(2).toString();
+        FriendList *friendList =new FriendList();
+        friendList->uid=QQnum;
+        friendList->order=query.value(1).toInt();
+        friendList->description=query.value(2).toString();
+
+        friendToList.insert(friendList->order,friendToList.size());//将要插入friendList的order和它在friendLists的index关联起来。
         friendLists->append(friendList);
     }
-//    for (auto iter=friendLists->begin();iter!=friendLists->end();iter++)
-//    {
-//        friendToList.insert(iter->order,iter);//小心VECTOR自动扩容导致指针失效。
-//    }
+
     //获取好友
     query.prepare("SELECT  * FROM friends WHERE uid = ?");
     query.bindValue(0,QQnum);
     query.exec();//获取好友列表
     while(query.next()){
-         Friend myfriend;
-         myfriend.uid=QQnum;
-         myfriend.mid=query.value(1).toInt();
-         myfriend.FriendOrder=query.value(2).toInt();
+         Friend *myfriend=new Friend();
+         myfriend->uid=QQnum;
+         myfriend->mid=query.value(1).toInt();
+         myfriend->FriendOrder=query.value(2).toInt();
          //friendToList.take(myfriend.FriendOrder)->friends.append(myfriend);//想过使用HashMap加速查找，但是总是报段错误，在插入第二个myfriend会报错。
-         for (auto iter=friendLists->begin();iter!=friendLists->end();iter++){
-             if(iter->order==myfriend.FriendOrder)iter->friends.append(myfriend);//根据order找到对应friendList，然后插入friend。
-         }
+         friendLists->at(friendToList.take(myfriend->FriendOrder))->friends.append(*myfriend);
+
+//         for (auto iter=friendLists->begin();iter!=friendLists->end();iter++){
+//             if(iter->order==myfriend.FriendOrder)iter->friends.append(myfriend);//根据order找到对应friendList，然后插入friend。
+//         }
     }
 
     ConnectionPool::closeConnection(db);
@@ -118,6 +136,7 @@ QByteArray UserServer::handle(QByteArray data){
         if(result>0){
             this->userInfo->QQnum=QQnum;
             this->userInfo->haveLogin=true;
+            emit startRegisterToServer();
             return "success";
         }else{
             return "false";
@@ -127,17 +146,17 @@ QByteArray UserServer::handle(QByteArray data){
     //if(!this->userInfo->haveLogin)return "noAuthority";//  已登录才获得执行下面的服务
 
     if(data.indexOf("getfList")>=0){//获取好友列表
-         QVector<FriendList>result= getFriendLists(this->userInfo->QQnum);
+         QVector<FriendList *>result= getFriendLists(this->userInfo->QQnum);
          QByteArray myFriend;
-         for(FriendList f:result){
-            myFriend.append("order:"+QByteArray::number(f.order)+",description:"+f.description+",");
-            for(Friend mf:f.friends){
+         for(FriendList *f:result){
+            myFriend.append("order:"+QByteArray::number(f->order)+",description:"+f->description+",");
+            for(Friend mf:f->friends){
                 myFriend.append(QByteArray::number(mf.mid)+",");
             }
             myFriend.append("*\r\n");
          }
         return myFriend;
-     }else if(data.indexOf("getMsg")>=0){
+     }else if(data.indexOf("getMsg")>=0){//获取历史消息
 
         return "ok";
     }else if(data.indexOf("Msg")>=0){//收到要发送给别人的消息

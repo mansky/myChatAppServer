@@ -45,6 +45,8 @@ private:
     int waitInterval; // 尝试获取连接时等待间隔时间
     int maxConnectionCount; // 最大连接数
 
+    static int dbcount;
+
     static QMutex mutex;
     static QWaitCondition waitConnection;
     static ConnectionPool *instance;

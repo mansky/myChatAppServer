@@ -3,7 +3,7 @@
 QMutex ConnectionPool::mutex;
 QWaitCondition ConnectionPool::waitConnection;
 ConnectionPool* ConnectionPool::instance = NULL;
-
+int ConnectionPool::dbcount=0;
 ConnectionPool::ConnectionPool() {
     hostName     = "localhost";//主机名
     databaseName = "myqq";//需要访问的数据库
@@ -14,6 +14,7 @@ ConnectionPool::ConnectionPool() {
     maxWaitTime  = 1000;
     waitInterval = 200;
     maxConnectionCount  = 200;
+
 }
 
 ConnectionPool::~ConnectionPool() {
@@ -22,15 +23,14 @@ ConnectionPool::~ConnectionPool() {
         QSqlDatabase::removeDatabase(connectionName);
     }
 
-    foreach(QString connectionName, unusedConnectionNames) {
-        QSqlDatabase::removeDatabase(connectionName);
-    }
+//    foreach(QString connectionName, unusedConnectionNames) {
+//        QSqlDatabase::removeDatabase(connectionName);
+//    }
 }
 
 ConnectionPool& ConnectionPool::getInstance() {
     if (NULL == instance) {
         QMutexLocker locker(&mutex);
-
         if (NULL == instance) {
             instance = new ConnectionPool();
         }
@@ -51,39 +51,40 @@ QSqlDatabase ConnectionPool::openConnection() {
 
     QMutexLocker locker(&mutex);
 
-    // 已创建连接数
-    int connectionCount = pool.unusedConnectionNames.size() + pool.usedConnectionNames.size();
+//    // 已创建连接数
+//    int connectionCount = pool.unusedConnectionNames.size() + pool.usedConnectionNames.size();
 
-    // 如果连接已经用完，等待 waitInterval 毫秒看看是否有可用连接，最长等待 maxWaitTime 毫秒
-    for (int i = 0;
-         i < pool.maxWaitTime
-         && pool.unusedConnectionNames.size() == 0 && connectionCount == pool.maxConnectionCount;
-         i += pool.waitInterval) {
-        waitConnection.wait(&mutex, pool.waitInterval);
+//    // 如果连接已经用完，等待 waitInterval 毫秒看看是否有可用连接，最长等待 maxWaitTime 毫秒
+//    for (int i = 0;
+//         i < pool.maxWaitTime
+//         && pool.unusedConnectionNames.size() == 0 && connectionCount == pool.maxConnectionCount;
+//         i += pool.waitInterval) {
+//        waitConnection.wait(&mutex, pool.waitInterval);
 
-        // 重新计算已创建连接数
-        connectionCount = pool.unusedConnectionNames.size() + pool.usedConnectionNames.size();
-    }
+//        // 重新计算已创建连接数
+//        connectionCount = pool.unusedConnectionNames.size() + pool.usedConnectionNames.size();
+//    }
 
-    if (pool.unusedConnectionNames.size() > 0) {
-        // 有已经回收的连接，复用它们
-        connectionName = pool.unusedConnectionNames.dequeue();
-    } else if (connectionCount < pool.maxConnectionCount) {
-        // 没有已经回收的连接，但是没有达到最大连接数，则创建新的连接
-        connectionName = QString("Connection-%1").arg(connectionCount + 1);
-    } else {
-        // 已经达到最大连接数
-        qDebug() << "Cannot create more connections.";
-        return QSqlDatabase();
-    }
+//    if (pool.unusedConnectionNames.size() > 0) {
+//        // 有已经回收的连接，复用它们
+//        connectionName = pool.unusedConnectionNames.dequeue();
+//    } else if (connectionCount < pool.maxConnectionCount) {
+//        // 没有已经回收的连接，但是没有达到最大连接数，则创建新的连接
+//        connectionName = QString("Connection-%1").arg(connectionCount + 1);
+//    } else {
+//        // 已经达到最大连接数
+//        qDebug() << "Cannot create more connections.";
+//        return QSqlDatabase();
+//    }
 
     // 创建连接
-    QSqlDatabase db = pool.createConnection(connectionName);
-
-    // 有效的连接才放入 usedConnectionNames
-    if (db.isOpen()) {
-        pool.usedConnectionNames.enqueue(connectionName);
-    }
+//    QSqlDatabase db = pool.createConnection(connectionName);
+    QSqlDatabase db=pool.createConnection(QString::number(dbcount));
+    dbcount++;
+//    // 有效的连接才放入 usedConnectionNames
+//    if (db.isOpen()) {
+//        pool.usedConnectionNames.enqueue(connectionName);
+//    }
 
     return db;
 }
@@ -103,10 +104,10 @@ void ConnectionPool::closeConnection(QSqlDatabase connection) {
 
 QSqlDatabase ConnectionPool::createConnection(const QString &connectionName) {
     // 连接已经创建过了，复用它，而不是重新创建
-    if (QSqlDatabase::contains(connectionName)) {
-        QSqlDatabase db1 = QSqlDatabase::database(connectionName);
-        return db1;
-    }
+//    if (QSqlDatabase::contains(connectionName)) {
+//        QSqlDatabase db1 = QSqlDatabase::database(connectionName);
+//        return db1;
+//    }
 
     // 创建一个新的连接
     QSqlDatabase db = QSqlDatabase::addDatabase(databaseType, connectionName);
