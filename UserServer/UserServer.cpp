@@ -1,6 +1,7 @@
 #include "UserServer.h"
 #include "database/MySqlPool.h"
 #include <QDebug>
+#include "UserServer/UserInfo.h"
 
 UserServer::UserServer(){
 
@@ -11,11 +12,15 @@ UserServer::~UserServer(){
 
 int UserServer::addUser(QString nickname,QString password){
     int QQnum=0;
-    QString sqlWords="INSERT INTO `myqq`.`users` (`nickname`, `password`, `salt`) VALUES ('"+nickname+"','"+password+"', '0');";
+   // QString sqlWords="INSERT INTO `myqq`.`users` (`nickname`, `password`, `salt`) VALUES ('"+nickname+"','"+password+"', '0');";
     QSqlDatabase db=ConnectionPool::openConnection();
     QSqlQuery query(db);
-    query.exec(sqlWords);//插入新的账户
-    sqlWords="SELECT  LAST_INSERT_ID();";
+    query.prepare("INSERT INTO `myqq`.`users` (`nickname`, `password`, `salt`) VALUES (?,?, '0');");
+    query.bindValue(0,nickname);
+    query.bindValue(1,password);
+    query.exec();
+   // query.exec(sqlWords);//插入新的账户
+    QString sqlWords="SELECT  LAST_INSERT_ID();";
     query.exec(sqlWords);//查询插入的ID，LAST_INSERT_ID()与connect相关。
     query.seek(0);
     QQnum=query.value(0).toInt();
@@ -91,6 +96,64 @@ int UserServer::SendMessage(QString message){
 int UserServer::SendImg(int QQnum,QString message){
 
 }
-int handle(QByteArray data){
+QByteArray UserServer::handle(QByteArray data){
+
+    if(data.indexOf("register")>=0){
+        int i=data.indexOf("nickname")+9;
+        int r=data.indexOf(",",i);
+        QString name=data.mid(i,r-i);
+        i=data.indexOf("password")+9;
+        r=data.indexOf(",",i);
+        QString password=data.mid(i,r-i);
+        int result=addUser(name,password);
+        return QByteArray::number(result);
+    }else if(data.indexOf("login")>=0){
+        int i=data.indexOf("QQnum")+6;
+        int r=data.indexOf(",",i);
+        int QQnum=data.mid(i,r-i).toInt();
+        i=data.indexOf("password")+9;
+        r=data.indexOf(",",i);
+        QString password=data.mid(i,r-i);
+        int result=login(QQnum,password);
+        if(result>0){
+            this->userInfo->QQnum=QQnum;
+            this->userInfo->haveLogin=true;
+            return "success";
+        }else{
+            return "false";
+        }
+
+    }
+    //if(!this->userInfo->haveLogin)return "noAuthority";//  已登录才获得执行下面的服务
+
+    if(data.indexOf("getfList")>=0){
+         QVector<FriendList>result= getFriendLists(this->userInfo->QQnum);
+         QByteArray myFriend;
+         for(FriendList f:result){
+            myFriend.append("order:"+QByteArray::number(f.order)+",description:"+f.description+",");
+            for(Friend mf:f.friends){
+                myFriend.append(QByteArray::number(mf.mid)+",");
+            }
+            myFriend.append("*\r\n");
+         }
+        return myFriend;
+     }else if(data.indexOf("getMsg")>=0){
+
+        return "ok";
+    }else if(data.indexOf("Msg")>=0){
+        int i=data.indexOf("to")+3;
+        int r=data.indexOf(",",i);
+        int des=data.mid(i,r-i).toInt();
+        i=data.indexOf("msgID")+6;
+        r=data.indexOf(",",i);
+        int msgId=data.mid(i,r-i).toInt();
+        i=data.indexOf("text")+5;
+        r=data.indexOf("*",i);
+        QByteArray sendData=data.mid(i,r-i);
+        return "ok";
+    }
+
+    return "noCmd";
 
 }
+

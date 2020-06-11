@@ -3,6 +3,7 @@
 
 #include <qstring.h>
 #include "FriendList.h"
+#include "UserServer/UserInfo.h"
 
 class UserServer
 {
@@ -17,8 +18,11 @@ public:
     int getMessage(int QQnum,QString message);
     int SendMessage(QString message);
     int SendImg(int QQnum,QString message);
-    int handle(QByteArray data);
+    QByteArray handle(QByteArray data);
+
+    UserInfo *userInfo;
 private:
+
 };
 
 #endif // USERSERVER_H

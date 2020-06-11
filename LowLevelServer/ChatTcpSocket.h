@@ -8,7 +8,7 @@
 #include <QByteArray>
 #include <QTime>
 #include "UserServer/UserServer.h"
-
+#include "UserServer/UserInfo.h"
 class ChatTcpSocket : public QTcpSocket
 {
     Q_OBJECT
@@ -32,7 +32,7 @@ protected slots:
 private:
 //   qintptr socketID;
 //    QMetaObject::Connection dis;
-
+    UserInfo *userInfo;
 };
 
 #endif // CHATTCPSOCKET_H

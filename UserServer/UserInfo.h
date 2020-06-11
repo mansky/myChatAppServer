@@ -9,12 +9,12 @@
 class UserInfo
 {
 public:
-    int QQnum;
-
-    QMutex objectMutex;
-    QMutex taskMutex;
-    int taskNum;
-    QList<QString> taskList;
+    int QQnum=0;
+    bool haveLogin;
+//    QMutex objectMutex;
+//    QMutex taskMutex;
+//    int taskNum;
+//    QList<QString> taskList;
 
     QString getNickname() const;
     void setNickname(const QString &value);
@@ -32,47 +32,5 @@ private:
 
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif // USERINFO_H
 
-QString UserInfo::getNickname() const
-{
-return nickname;
-}
-
-void UserInfo::setNickname(const QString &value)
-{
-nickname = value;
-}
-
-int UserInfo::getPassword() const
-{
-return password;
-}
-
-void UserInfo::setPassword(int value)
-{
-password = value;
-}
-
-int UserInfo::getSalt() const
-{
-return salt;
-}
-
-void UserInfo::setSalt(int value)
-{
-salt = value;
-}

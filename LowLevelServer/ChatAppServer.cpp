@@ -30,12 +30,10 @@ void ChatAppServer::incomingConnection(qintptr socketDescriptor) //多线程必�
 
     ChatTcpSocket *socket = new ChatTcpSocket(socketDescriptor);
 
-    qDebug()<<socket->peerAddress()<<"|"<<socket->peerPort()<<endl;
-
 //    connect(socket, SIGNAL(readyRead()), socket, SLOT(ReadAndParseData())); // 会移进线程里
     connect(socket, SIGNAL(disconnected()), socket, SLOT(deleteLater()));
 
-    QThread *thread = new QThread(socket); // 以socket为父类，当socket释放删除后也会删除线程，或者将线程的quit信号关联槽deleteLater()也可以达到效果
+    QThread *thread = new QThread(); // 以socket为父类，当socket释放删除后也会删除线程，或者将线程的quit信号关联槽deleteLater()也可以达到效果
     connect(socket, SIGNAL(disconnected()), thread, SLOT(quit()));
     socket->moveToThread(thread);
     thread->start();
