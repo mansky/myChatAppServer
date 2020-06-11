@@ -28,13 +28,15 @@ void ChatTcpSocket::dataReceived(){
         this->disconnectFromHost();
         return;
     }
-    qDebug() <<QThread::currentThread();
-    UserServer UserServer;
-    UserServer.userInfo=this->userInfo;
-    write(UserServer.handle(data));
+    UserServer userServer;
+    userServer.userInfo=this->userInfo;
+    connect(&userServer,SIGNAL(sendToOtherQQ(const QByteArray&,int )),this->masterServer,SLOT(sendToOtherQQ(const QByteArray&,int )));
+    write(userServer.handle(data));
 }
 
 void ChatTcpSocket::disConTcp(){
-    qDebug() <<" delete socket";
     this->disconnectFromHost();
  }
+
+
+

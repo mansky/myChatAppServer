@@ -3,7 +3,7 @@
 #include <QDebug>
 #include "UserServer/UserInfo.h"
 
-UserServer::UserServer(){
+UserServer::UserServer(QObject *parent){
 
 }
 UserServer::~UserServer(){
@@ -98,7 +98,7 @@ int UserServer::SendImg(int QQnum,QString message){
 }
 QByteArray UserServer::handle(QByteArray data){
 
-    if(data.indexOf("register")>=0){
+    if(data.indexOf("register")>=0){//注册新账号
         int i=data.indexOf("nickname")+9;
         int r=data.indexOf(",",i);
         QString name=data.mid(i,r-i);
@@ -107,7 +107,7 @@ QByteArray UserServer::handle(QByteArray data){
         QString password=data.mid(i,r-i);
         int result=addUser(name,password);
         return QByteArray::number(result);
-    }else if(data.indexOf("login")>=0){
+    }else if(data.indexOf("login")>=0){//登陆
         int i=data.indexOf("QQnum")+6;
         int r=data.indexOf(",",i);
         int QQnum=data.mid(i,r-i).toInt();
@@ -126,7 +126,7 @@ QByteArray UserServer::handle(QByteArray data){
     }
     //if(!this->userInfo->haveLogin)return "noAuthority";//  已登录才获得执行下面的服务
 
-    if(data.indexOf("getfList")>=0){
+    if(data.indexOf("getfList")>=0){//获取好友列表
          QVector<FriendList>result= getFriendLists(this->userInfo->QQnum);
          QByteArray myFriend;
          for(FriendList f:result){
@@ -140,7 +140,7 @@ QByteArray UserServer::handle(QByteArray data){
      }else if(data.indexOf("getMsg")>=0){
 
         return "ok";
-    }else if(data.indexOf("Msg")>=0){
+    }else if(data.indexOf("Msg")>=0){//收到要发送给别人的消息
         int i=data.indexOf("to")+3;
         int r=data.indexOf(",",i);
         int des=data.mid(i,r-i).toInt();
@@ -150,6 +150,7 @@ QByteArray UserServer::handle(QByteArray data){
         i=data.indexOf("text")+5;
         r=data.indexOf("*",i);
         QByteArray sendData=data.mid(i,r-i);
+        emit sendToOtherQQ(sendData,des);
         return "ok";
     }
 

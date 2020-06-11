@@ -12,7 +12,5 @@ int main(int argc, char *argv[])
     mainWindow.show();
     ChatAppServer chatAppServer;
 //  chatAppServer.listen(QHostAddress::Any,6666);
-//  UserServer userServer;
-//  QVector<FriendList> friendLists=userServer.getFriendLists(10000);
     return a.exec();
 }

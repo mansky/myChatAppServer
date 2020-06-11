@@ -1,14 +1,16 @@
 #ifndef USERSERVER_H
 #define USERSERVER_H
 
+#include <QObject>
 #include <qstring.h>
 #include "FriendList.h"
 #include "UserServer/UserInfo.h"
 
-class UserServer
+class UserServer:public QObject
 {
+     Q_OBJECT
 public:
-    UserServer();
+    UserServer(QObject *parent=0);
     ~UserServer();
     int addUser(QString nickname,QString password);
     int login(int QQnum,QString password);
@@ -19,8 +21,9 @@ public:
     int SendMessage(QString message);
     int SendImg(int QQnum,QString message);
     QByteArray handle(QByteArray data);
-
     UserInfo *userInfo;
+signals:
+     void sendToOtherQQ(const QByteArray & data,int QQnum);
 private:
 
 };
