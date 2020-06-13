@@ -64,7 +64,7 @@ int UserServer::login(int QQnum,QString password){
 }
 
  QVector<FriendList *>  & UserServer::getFriendLists(int QQnum){
-    QVector<FriendList*> *friendLists=new QVector<FriendList*>();
+    QVector<FriendList*> friendLists;
 
     QSqlQuery query(db);
     QHash<int,int> friendToList;
@@ -80,7 +80,7 @@ int UserServer::login(int QQnum,QString password){
         friendList->description=query.value(2).toString();
 
         friendToList.insert(friendList->order,friendToList.size());//将要插入friendList的order和它在friendLists的index关联起来。
-        friendLists->append(friendList);
+        friendLists.append(friendList);
     }
 
     //获取好友
@@ -93,7 +93,7 @@ int UserServer::login(int QQnum,QString password){
          myfriend->mid=query.value(1).toInt();
          myfriend->FriendOrder=query.value(2).toInt();
          //friendToList.take(myfriend.FriendOrder)->friends.append(myfriend);//想过使用HashMap加速查找，但是总是报段错误，在插入第二个myfriend会报错。
-         friendLists->at(friendToList.take(myfriend->FriendOrder))->friends.append(*myfriend);
+         friendLists.at(friendToList.take(myfriend->FriendOrder))->friends.append(*myfriend);
 
 //         for (auto iter=friendLists->begin();iter!=friendLists->end();iter++){
 //             if(iter->order==myfriend.FriendOrder)iter->friends.append(myfriend);//根据order找到对应friendList，然后插入friend。
@@ -101,7 +101,7 @@ int UserServer::login(int QQnum,QString password){
     }
 
     ConnectionPool::closeConnection(db);
-    return *friendLists;
+    return friendLists;
 }
 
 int UserServer::getMessage(int QQnum,QString message){
@@ -114,6 +114,20 @@ int UserServer::SendMessage(QString message){
 int UserServer::SendImg(int QQnum,QString message){
 
 }
+int UserServer::logMsg(int QQnum,QString message){
+    QSqlQuery query(db);
+    QDateTime time = QDateTime::currentDateTime();   //获取当前时间
+    int timeT = time.toTime_t();   //将当前时间转为时间戳
+    query.prepare("INSERT INTO `myqq`.`noreadmessage` (`uid`, `mid`,`time`, `words`) VALUES (?,?, ?,?);");
+    query.bindValue(0,QQnum);//uid是接收方ID；
+    query.bindValue(1,this->userInfo->QQnum);//mid是发送方ID；
+    query.bindValue(2,timeT);
+    query.bindValue(3,message);
+    query.exec();
+
+    return 1;
+}
+
 QByteArray UserServer::handle(QByteArray data){
 
     if(data.indexOf("register")>=0){//注册新账号
@@ -143,7 +157,7 @@ QByteArray UserServer::handle(QByteArray data){
         }
 
     }
-    //if(!this->userInfo->haveLogin)return "noAuthority";//  已登录才获得执行下面的服务
+    if(!this->userInfo->haveLogin)return "noAuthority";//  已登录才获得执行下面的服务
 
     if(data.indexOf("getfList")>=0){//获取好友列表
          QVector<FriendList *>result= getFriendLists(this->userInfo->QQnum);
@@ -155,6 +169,7 @@ QByteArray UserServer::handle(QByteArray data){
             }
             myFriend.append("*\r\n");
          }
+
         return myFriend;
      }else if(data.indexOf("getMsg")>=0){//获取历史消息
 

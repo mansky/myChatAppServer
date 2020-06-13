@@ -21,6 +21,7 @@ public:
     int getMessage(int QQnum,QString message);
     int SendMessage(QString message);
     int SendImg(int QQnum,QString message);
+    int logMsg(int QQnum,QString message);
     QByteArray handle(QByteArray data);
     UserInfo *userInfo;
 signals:

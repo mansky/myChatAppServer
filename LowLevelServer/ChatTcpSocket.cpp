@@ -55,7 +55,11 @@ void ChatTcpSocket::sentData( QByteArray  data)
 void ChatTcpSocket::sendToOtherQQ(const QByteArray &  data,int QQnum)
 {
     ChatTcpSocket *desSocket =SocketMap::find(QQnum);
-    desSocket->fromOther(data);
+    if(NULL==desSocket){
+        this->userServer->logMsg(QQnum,data);
+    }else{
+        desSocket->fromOther(data);
+    }
 }
 
 void ChatTcpSocket::startRegisterToServer()
